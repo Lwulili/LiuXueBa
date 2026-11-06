@@ -15,6 +15,7 @@ import androidx.compose.ui.unit.dp
 import com.example.liuxueba.ui.theme.LiuXueBaTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.items
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -30,6 +31,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun MainScreen() {
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showLoginPage by remember { mutableStateOf(false) }
 
     val tabs = listOf("首页", "社区", "院校", "我的")
 
@@ -57,7 +59,21 @@ fun MainScreen() {
                 0 -> HomePage()
                 1 -> CommunityPage()
                 2 -> InstitutionPage()
-                3 -> ProfilePage()
+                3 -> {
+                    if (showLoginPage) {
+                        LoginPage(
+                            onBack = {
+                                showLoginPage = false
+                            }
+                        )
+                    } else {
+                        ProfilePage(
+                            onLoginClick = {
+                                showLoginPage = true
+                            }
+                        )
+                    }
+                }
             }
         }
     }
@@ -630,492 +646,7 @@ fun PostDetailDialog(
 }
 
 
-// 院校页面
-
-@Composable
-fun InstitutionPage() {
-
-    var keyword by remember { mutableStateOf("") }
-    var programKeyword by remember { mutableStateOf("") }
-    var selectedProgramCategory by remember { mutableStateOf("全部") }
-    var selectedUniversity by remember {
-        mutableStateOf<UniversityInfo?>(null)
-    }
-    var selectedProgram by remember {
-        mutableStateOf<ProgramInfo?>(null)
-    }
-
-    // 第一版院校演示数据
-    val universities = remember {
-        listOf(
-            UniversityInfo(
-                "University of Oxford",
-                "牛津大学",
-                "英国 · 牛津",
-                "英国知名研究型大学，提供多个学科领域的学习与研究机会。",
-                listOf(
-                    ProgramInfo("MSc Computer Science", "计算机科学硕士", "计算机与信息技术"),
-                    ProgramInfo("MSc Financial Economics", "金融经济学硕士", "经济与金融")
-                )
-            ),
-            UniversityInfo(
-                "University of Cambridge",
-                "剑桥大学",
-                "英国 · 剑桥",
-                "英国知名研究型大学，拥有多个学院和学术研究领域。",
-                listOf(
-                    ProgramInfo("MPhil in Advanced Computer Science", "高级计算机科学硕士", "计算机与信息技术"),
-                    ProgramInfo("MPhil in Management", "管理学硕士", "商业与管理")
-                )
-            ),
-            UniversityInfo(
-                "Imperial College London",
-                "帝国理工学院",
-                "英国 · 伦敦",
-                "以科学、工程、医学和商学等领域的教学与研究著称。",
-                listOf(
-                    ProgramInfo("MSc Computing", "计算机硕士", "计算机与信息技术"),
-                    ProgramInfo("MSc Finance", "金融学硕士", "经济与金融")
-                )
-            ),
-            UniversityInfo(
-                "University College London",
-                "伦敦大学学院",
-                "英国 · 伦敦",
-                "位于伦敦的综合性研究型大学，学科领域广泛。",
-                listOf(
-                    ProgramInfo("MSc Computer Science", "计算机科学硕士", "计算机与信息技术"),
-                    ProgramInfo("MSc Data Science", "数据科学硕士", "计算机与信息技术")
-                )
-            ),
-            UniversityInfo(
-                "The University of Manchester",
-                "曼彻斯特大学",
-                "英国 · 曼彻斯特",
-                "英国综合性研究型大学，设有多个学科和专业。",
-                listOf(
-                    ProgramInfo("MSc Advanced Computer Science", "高级计算机科学硕士", "计算机与信息技术"),
-                    ProgramInfo("MSc Management", "管理学硕士", "商业与管理")
-                )
-            ),
-            UniversityInfo(
-                "The University of Edinburgh",
-                "爱丁堡大学",
-                "英国 · 爱丁堡",
-                "位于苏格兰爱丁堡的综合性研究型大学。",
-                listOf(
-                    ProgramInfo("MSc Artificial Intelligence", "人工智能硕士", "计算机与信息技术"),
-                    ProgramInfo("MSc Business Analytics", "商业分析硕士", "商业与管理")
-                )
-            )
-        )
-    }
-
-    // 将各大学的专业汇总，供专业分类和搜索使用。
-    val allPrograms = universities.flatMap { university ->
-        university.programs.map { program ->
-            university to program
-        }
-    }
-
-    val programCategories = listOf("全部") +
-            allPrograms.map { it.second.category }.distinct()
-
-    val filteredPrograms = allPrograms.filter { (university, program) ->
-        val matchesCategory =
-            selectedProgramCategory == "全部" ||
-                    program.category == selectedProgramCategory
-
-        val matchesKeyword =
-            program.name.contains(programKeyword, ignoreCase = true) ||
-                    program.nameCn.contains(programKeyword, ignoreCase = true) ||
-                    university.nameCn.contains(programKeyword, ignoreCase = true) ||
-                    university.name.contains(programKeyword, ignoreCase = true)
-
-        matchesCategory && matchesKeyword
-    }
-
-    val filteredUniversities = universities.filter {
-        it.name.contains(keyword, ignoreCase = true) ||
-                it.nameCn.contains(keyword, ignoreCase = true)
-    }
-
-    PageContainer {
-
-        Text(
-            "英国院校",
-            style = MaterialTheme.typography.headlineLarge
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            "探索英国大学，寻找适合自己的留学方向",
-            color = MaterialTheme.colorScheme.secondary
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        OutlinedTextField(
-            value = keyword,
-            onValueChange = { keyword = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = {
-                Text("搜索大学名称")
-            },
-            singleLine = true
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        Text(
-            "院校列表（${filteredUniversities.size}）",
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        if (filteredUniversities.isEmpty()) {
-            Text(
-                "没有找到相关院校",
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
-
-        filteredUniversities.forEach { university ->
-
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        selectedUniversity = university
-                    },
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
-                ) {
-                    Text(
-                        university.nameCn,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(5.dp))
-
-                    Text(
-                        university.name,
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Spacer(Modifier.height(5.dp))
-
-                    Text(
-                        university.location,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Text(
-                        "查看院校详情和专业 →",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
-        }
-
-        HorizontalDivider(Modifier.padding(vertical = 20.dp))
-
-        Text(
-            "专业信息库",
-            style = MaterialTheme.typography.headlineSmall
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            "按专业类别筛选，或搜索专业名称和大学",
-            color = MaterialTheme.colorScheme.secondary,
-            style = MaterialTheme.typography.bodySmall
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        OutlinedTextField(
-            value = programKeyword,
-            onValueChange = { programKeyword = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text("搜索专业或大学") },
-            singleLine = true
-        )
-
-        Spacer(Modifier.height(12.dp))
-
-        Row(
-            modifier = Modifier.horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            programCategories.forEach { category ->
-                FilterChip(
-                    selected = selectedProgramCategory == category,
-                    onClick = { selectedProgramCategory = category },
-                    label = { Text(category) }
-                )
-            }
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        Text(
-            "专业列表（${filteredPrograms.size}）",
-            style = MaterialTheme.typography.titleMedium
-        )
-
-        Spacer(Modifier.height(10.dp))
-
-        if (filteredPrograms.isEmpty()) {
-            Text(
-                "没有找到符合条件的专业",
-                color = MaterialTheme.colorScheme.secondary
-            )
-        }
-
-        filteredPrograms.forEach { (university, program) ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        selectedProgram = program
-                    },
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        program.nameCn,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        program.name,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        university.nameCn,
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        program.category,
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        "查看专业详情 →",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelMedium
-                    )
-                }
-            }
-            Spacer(Modifier.height(10.dp))
-        }
-    }
-
-    // 院校详情弹窗
-    if (selectedUniversity != null && selectedProgram == null) {
-        val university = selectedUniversity!!
-
-        AlertDialog(
-            onDismissRequest = {
-                selectedUniversity = null
-            },
-            title = {
-                Text(university.nameCn)
-            },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .heightIn(max = 420.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-
-                    Text(
-                        university.name,
-                        style = MaterialTheme.typography.titleSmall
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Text(university.location)
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Text(university.description)
-
-                    Spacer(Modifier.height(20.dp))
-
-                    Text(
-                        "相关专业",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(10.dp))
-
-                    university.programs.forEach { program ->
-
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 8.dp)
-                                .clickable {
-                                    selectedUniversity = null
-                                    selectedProgram = program
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(12.dp)
-                            ) {
-                                Text(
-                                    program.nameCn,
-                                    style = MaterialTheme.typography.titleSmall
-                                )
-
-                                Spacer(Modifier.height(4.dp))
-
-                                Text(
-                                    program.name,
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-
-                                Spacer(Modifier.height(4.dp))
-
-                                Text(
-                                    "查看专业详情 →",
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                    }
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedUniversity = null
-                    }
-                ) {
-                    Text("关闭")
-                }
-            }
-        )
-    }
-
-    // 专业详情弹窗
-
-    if (selectedProgram != null) {
-        val program = selectedProgram!!
-
-        AlertDialog(
-            onDismissRequest = {
-                selectedProgram = null
-            },
-            title = {
-                Text(program.nameCn)
-            },
-            text = {
-                Column(
-                    modifier = Modifier
-                        .heightIn(max = 450.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-
-                    Text(
-                        program.name,
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        "专业基本信息",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    InfoRow("专业类别", program.category)
-                    InfoRow("学位类型", program.degreeLevel)
-                    InfoRow("学制", program.duration)
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-
-                    Text(
-                        "申请要求",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    InfoRow("国际学生学费", program.tuition)
-                    InfoRow("IELTS 要求", program.ielts)
-                    InfoRow("学术背景", program.academicRequirement)
-
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 12.dp)
-                    )
-
-                    Text(
-                        "官方信息",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    InfoRow("官方课程页面", program.officialUrl)
-
-                    Spacer(Modifier.height(16.dp))
-
-                    Text(
-                        "提示：当前展示的是项目数据结构示例，具体招生要求、学费和学制需要以大学官方公布的信息为准。",
-                        color = MaterialTheme.colorScheme.secondary,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        selectedProgram = null
-                    }
-                ) {
-                    Text("关闭")
-                }
-            }
-        )
-    }
-
-
-
-}
-
-// 院校数据模型
-data class UniversityInfo(
-    val name: String,
-    val nameCn: String,
-    val location: String,
-    val description: String,
-    val programs: List<ProgramInfo>
-)
-
-// 专业数据模型
+// 院校和专业数据模型：必须定义在顶层，供院校列表、专业列表和详情弹窗共同使用。
 data class ProgramInfo(
     val name: String,
     val nameCn: String,
@@ -1127,6 +658,456 @@ data class ProgramInfo(
     val academicRequirement: String = "待核验",
     val officialUrl: String = "待补充"
 )
+
+data class UniversityInfo(
+    val name: String,
+    val nameCn: String,
+    val location: String,
+    val description: String,
+    val programs: List<ProgramInfo>
+)
+
+// 院校页面
+
+@Composable
+fun InstitutionPage() {
+    var selectedSection by remember { mutableIntStateOf(0) } // 0=院校，1=专业
+    var universityKeyword by remember { mutableStateOf("") }
+    var programKeyword by remember { mutableStateOf("") }
+    var selectedProgramCategory by remember { mutableStateOf("全部") }
+
+    var selectedUniversity by remember { mutableStateOf<UniversityInfo?>(null) }
+    var selectedProgram by remember { mutableStateOf<ProgramInfo?>(null) }
+
+    val universities = remember {
+        listOf(
+            UniversityInfo(
+                name = "University of Oxford",
+                nameCn = "牛津大学",
+                location = "英国 · 牛津",
+                description = "英国知名研究型大学，提供多个学科领域的学习与研究机会。",
+                programs = listOf(
+                    ProgramInfo("MSc Computer Science", "计算机科学硕士", "计算机与信息技术"),
+                    ProgramInfo("MSc Financial Economics", "金融经济学硕士", "经济与金融")
+                )
+            ),
+            UniversityInfo(
+                name = "University of Cambridge",
+                nameCn = "剑桥大学",
+                location = "英国 · 剑桥",
+                description = "英国知名研究型大学，拥有多个学院和学术研究领域。",
+                programs = listOf(
+                    ProgramInfo("MPhil in Advanced Computer Science", "高级计算机科学硕士", "计算机与信息技术"),
+                    ProgramInfo("MPhil in Management", "管理学硕士", "商业与管理")
+                )
+            ),
+            UniversityInfo(
+                name = "Imperial College London",
+                nameCn = "帝国理工学院",
+                location = "英国 · 伦敦",
+                description = "以科学、工程、医学和商学等领域的教学与研究著称。",
+                programs = listOf(
+                    ProgramInfo("MSc Computing", "计算机硕士", "计算机与信息技术"),
+                    ProgramInfo("MSc Finance", "金融学硕士", "经济与金融")
+                )
+            ),
+            UniversityInfo(
+                name = "University College London",
+                nameCn = "伦敦大学学院",
+                location = "英国 · 伦敦",
+                description = "位于伦敦的综合性研究型大学，学科领域广泛。",
+                programs = listOf(
+                    ProgramInfo("MSc Computer Science", "计算机科学硕士", "计算机与信息技术"),
+                    ProgramInfo("MSc Data Science", "数据科学硕士", "计算机与信息技术")
+                )
+            ),
+            UniversityInfo(
+                name = "The University of Manchester",
+                nameCn = "曼彻斯特大学",
+                location = "英国 · 曼彻斯特",
+                description = "英国综合性研究型大学，设有多个学科和专业。",
+                programs = listOf(
+                    ProgramInfo("MSc Advanced Computer Science", "高级计算机科学硕士", "计算机与信息技术"),
+                    ProgramInfo("MSc Management", "管理学硕士", "商业与管理")
+                )
+            ),
+            UniversityInfo(
+                name = "The University of Edinburgh",
+                nameCn = "爱丁堡大学",
+                location = "英国 · 爱丁堡",
+                description = "位于苏格兰爱丁堡的综合性研究型大学。",
+                programs = listOf(
+                    ProgramInfo("MSc Artificial Intelligence", "人工智能硕士", "计算机与信息技术"),
+                    ProgramInfo("MSc Business Analytics", "商业分析硕士", "商业与管理")
+                )
+            )
+        )
+    }
+
+    val allPrograms = universities.flatMap { university ->
+        university.programs.map { program -> university to program }
+    }
+
+    val programCategories = listOf("全部") +
+            allPrograms.map { it.second.category }.distinct()
+
+    val filteredUniversities = universities.filter { university ->
+        university.name.contains(universityKeyword, ignoreCase = true) ||
+                university.nameCn.contains(universityKeyword, ignoreCase = true)
+    }
+
+    val filteredPrograms = allPrograms.filter { (university, program) ->
+        val categoryMatches =
+            selectedProgramCategory == "全部" ||
+                    program.category == selectedProgramCategory
+
+        val keywordMatches =
+            program.name.contains(programKeyword, ignoreCase = true) ||
+                    program.nameCn.contains(programKeyword, ignoreCase = true) ||
+                    university.name.contains(programKeyword, ignoreCase = true) ||
+                    university.nameCn.contains(programKeyword, ignoreCase = true)
+
+        categoryMatches && keywordMatches
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        // 固定区域：标题
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "院校与专业",
+            style = MaterialTheme.typography.headlineLarge
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            text = "探索英国大学，找到适合自己的留学方向",
+            color = MaterialTheme.colorScheme.secondary,
+            style = MaterialTheme.typography.bodySmall
+        )
+        Spacer(Modifier.height(16.dp))
+
+        // 固定区域：院校 / 专业切换
+        TabRow(selectedTabIndex = selectedSection) {
+            Tab(
+                selected = selectedSection == 0,
+                onClick = { selectedSection = 0 },
+                text = { Text("院校") }
+            )
+            Tab(
+                selected = selectedSection == 1,
+                onClick = { selectedSection = 1 },
+                text = { Text("专业") }
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // 固定区域：搜索框
+        OutlinedTextField(
+            value = if (selectedSection == 0) universityKeyword else programKeyword,
+            onValueChange = { value ->
+                if (selectedSection == 0) {
+                    universityKeyword = value
+                } else {
+                    programKeyword = value
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = {
+                Text(
+                    if (selectedSection == 0) {
+                        "搜索大学中文名或英文名"
+                    } else {
+                        "搜索专业名称或所属大学"
+                    }
+                )
+            },
+            singleLine = true
+        )
+
+        // 固定区域：专业分类，仅专业页显示
+        if (selectedSection == 1) {
+            Spacer(Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                programCategories.forEach { category ->
+                    FilterChip(
+                        selected = selectedProgramCategory == category,
+                        onClick = { selectedProgramCategory = category },
+                        label = { Text(category) }
+                    )
+                }
+            }
+        }
+
+        Spacer(Modifier.height(12.dp))
+
+        // 列表区域：只让下方列表滚动，顶部控件保持可见
+        if (selectedSection == 0) {
+            Text(
+                text = "英国大学（${filteredUniversities.size}）",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(Modifier.height(8.dp))
+
+            if (filteredUniversities.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    Text(
+                        "没有找到相关院校",
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            } else {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(
+                        items = filteredUniversities,
+                        key = { university -> university.name }
+                    ) { university ->
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedUniversity = university },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    university.nameCn,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(5.dp))
+                                Text(
+                                    university.name,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                Spacer(Modifier.height(5.dp))
+                                Text(
+                                    university.location,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.secondary
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    "查看院校详情和专业",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Text(
+                text = "专业列表（${filteredPrograms.size}）",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(Modifier.height(8.dp))
+
+            if (filteredPrograms.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = androidx.compose.ui.Alignment.Center
+                ) {
+                    Text(
+                        "没有找到符合条件的专业",
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            } else {
+                androidx.compose.foundation.lazy.LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
+                ) {
+                    items(
+                        items = filteredPrograms,
+                        key = { item -> "${item.first.name}-${item.second.name}" }
+                    ) { item ->
+                        val university = item.first
+                        val program = item.second
+
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { selectedProgram = program },
+                            shape = RoundedCornerShape(16.dp)
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Text(
+                                    program.nameCn,
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    program.name,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    university.nameCn,
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Spacer(Modifier.height(6.dp))
+                                Text(
+                                    program.category,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    style = MaterialTheme.typography.labelMedium
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 同一时刻只显示一个弹窗，避免两个详情弹窗重叠
+    when {
+        selectedProgram != null -> {
+            val program = selectedProgram!!
+            AlertDialog(
+                onDismissRequest = { selectedProgram = null },
+                title = { Text(program.nameCn) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 450.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            program.name,
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "专业基本信息",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        InfoRow("专业类别", program.category)
+                        InfoRow("学位类型", program.degreeLevel)
+                        InfoRow("学制", program.duration)
+
+                        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                        Text(
+                            "申请要求",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(12.dp))
+                        InfoRow("国际学生学费", program.tuition)
+                        InfoRow("IELTS 要求", program.ielts)
+                        InfoRow("学术背景", program.academicRequirement)
+
+                        HorizontalDivider(Modifier.padding(vertical = 12.dp))
+                        Text(
+                            "官方信息",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        InfoRow("官方课程页面", program.officialUrl)
+
+                        Spacer(Modifier.height(16.dp))
+                        Text(
+                            "提示：当前展示的是项目演示数据，具体招生要求、学费和学制需要以大学官方公布的信息为准。",
+                            color = MaterialTheme.colorScheme.secondary,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { selectedProgram = null }) {
+                        Text("关闭")
+                    }
+                }
+            )
+        }
+
+        selectedUniversity != null -> {
+            val university = selectedUniversity!!
+            AlertDialog(
+                onDismissRequest = { selectedUniversity = null },
+                title = { Text(university.nameCn) },
+                text = {
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 420.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            university.name,
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        Text(university.location)
+                        Spacer(Modifier.height(12.dp))
+                        Text(university.description)
+                        Spacer(Modifier.height(20.dp))
+                        Text(
+                            "相关专业",
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(10.dp))
+
+                        university.programs.forEach { program ->
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(bottom = 8.dp)
+                                    .clickable {
+                                        selectedUniversity = null
+                                        selectedProgram = program
+                                    }
+                            ) {
+                                Column(Modifier.padding(12.dp)) {
+                                    Text(
+                                        program.nameCn,
+                                        style = MaterialTheme.typography.titleSmall
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        program.name,
+                                        style = MaterialTheme.typography.bodySmall
+                                    )
+                                    Spacer(Modifier.height(4.dp))
+                                    Text(
+                                        "查看专业详情",
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { selectedUniversity = null }) {
+                        Text("关闭")
+                    }
+                }
+            )
+        }
+    }
+}
 
 // 通用信息展示组件，放在顶层，供专业详情页面调用
 @Composable
@@ -1151,7 +1132,9 @@ fun InfoRow(
 
 // 我的页面
 @Composable
-fun ProfilePage() {
+fun ProfilePage(
+    onLoginClick: () -> Unit
+) {
     PageContainer {
         Text("个人中心", style = MaterialTheme.typography.headlineLarge)
 
@@ -1172,7 +1155,7 @@ fun ProfilePage() {
                 Spacer(Modifier.height(16.dp))
 
                 Button(
-                    onClick = {},
+                    onClick = onLoginClick,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text("登录 / 注册")
@@ -1258,6 +1241,76 @@ fun PostCard(
             Text(description, style = MaterialTheme.typography.bodyMedium)
         }
     }
+}
+@Composable
+fun LoginPage(
+    onBack: () -> Unit
+) {
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
 
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(24.dp)
+    ) {
+        TextButton(onClick = onBack) {
+            Text("← 返回")
+        }
 
+        Spacer(Modifier.height(32.dp))
+
+        Text(
+            "欢迎来到留学吧",
+            style = MaterialTheme.typography.headlineMedium
+        )
+
+        Spacer(Modifier.height(8.dp))
+
+        Text(
+            "登录账号，开启你的留学交流之旅",
+            color = MaterialTheme.colorScheme.secondary
+        )
+
+        Spacer(Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("邮箱") },
+            placeholder = { Text("请输入邮箱地址") },
+            singleLine = true
+        )
+
+        Spacer(Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text("密码") },
+            placeholder = { Text("请输入密码") },
+            singleLine = true
+        )
+
+        Spacer(Modifier.height(24.dp))
+
+        Button(
+            onClick = {},
+            modifier = Modifier.fillMaxWidth(),
+            enabled = email.isNotBlank() && password.isNotBlank()
+        ) {
+            Text("登录")
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        TextButton(
+            onClick = {}
+        ) {
+            Text("还没有账号？立即注册")
+        }
+    }
 }
