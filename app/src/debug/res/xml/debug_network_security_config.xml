@@ -1,0 +1,4 @@
+<network-security-config>
+    <!-- Local HTTP development is limited to debug builds. -->
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

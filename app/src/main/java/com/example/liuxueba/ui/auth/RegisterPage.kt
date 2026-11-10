@@ -25,7 +25,8 @@ fun RegisterPage(
     onToggleConfirmationVisibility: () -> Unit,
     onSubmit: () -> Unit,
     onLoginClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isSubmitting: Boolean = false
 ) {
     AuthPageLayout(
         title = stringResource(R.string.auth_register_title),
@@ -37,6 +38,7 @@ fun RegisterPage(
             onValueChange = onUsernameChange,
             label = stringResource(R.string.auth_username),
             error = state.errorFor(AuthField.USERNAME),
+            enabled = !isSubmitting,
             helperText = stringResource(R.string.auth_username_hint)
         )
         Spacer(Modifier.height(12.dp))
@@ -45,6 +47,7 @@ fun RegisterPage(
             onValueChange = onEmailChange,
             label = stringResource(R.string.auth_email),
             error = state.errorFor(AuthField.EMAIL),
+            enabled = !isSubmitting,
             keyboardType = KeyboardType.Email
         )
         Spacer(Modifier.height(12.dp))
@@ -55,6 +58,7 @@ fun RegisterPage(
             visible = state.passwordVisible,
             onToggleVisibility = onTogglePasswordVisibility,
             error = state.errorFor(AuthField.PASSWORD),
+            enabled = !isSubmitting,
             helperText = stringResource(R.string.auth_password_hint)
         )
         Spacer(Modifier.height(12.dp))
@@ -65,17 +69,18 @@ fun RegisterPage(
             visible = state.confirmPasswordVisible,
             onToggleVisibility = onToggleConfirmationVisibility,
             error = state.errorFor(AuthField.CONFIRM_PASSWORD),
+            enabled = !isSubmitting,
             imeAction = ImeAction.Done,
             onSubmit = onSubmit
         )
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = onSubmit,
-            enabled = state.canSubmit,
+            enabled = state.canSubmit && !isSubmitting,
             modifier = Modifier.fillMaxWidth()
-        ) { Text(stringResource(R.string.auth_register)) }
+        ) { Text(stringResource(if (isSubmitting) R.string.auth_registering else R.string.auth_register)) }
         Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onLoginClick, modifier = Modifier.fillMaxWidth()) {
+        TextButton(onClick = onLoginClick, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_go_login))
         }
     }

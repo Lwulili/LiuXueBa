@@ -70,7 +70,8 @@ internal fun AuthTextField(
     helperText: String? = null,
     visualTransformation: VisualTransformation = VisualTransformation.None,
     trailingIcon: @Composable (() -> Unit)? = null,
-    onSubmit: () -> Unit = {}
+    onSubmit: () -> Unit = {},
+    enabled: Boolean = true
 ) {
     val focusManager = LocalFocusManager.current
     val supportingMessage = validationMessage(error, label) ?: helperText
@@ -79,6 +80,7 @@ internal fun AuthTextField(
         onValueChange = onValueChange,
         modifier = Modifier.fillMaxWidth(),
         label = { Text(label) },
+        enabled = enabled,
         isError = error != null,
         supportingText = supportingMessage?.let { message -> { Text(message) } },
         singleLine = true,
@@ -106,7 +108,8 @@ internal fun AuthPasswordField(
     error: AuthValidationError?,
     imeAction: ImeAction = ImeAction.Next,
     helperText: String? = null,
-    onSubmit: () -> Unit = {}
+    onSubmit: () -> Unit = {},
+    enabled: Boolean = true
 ) {
     val toggleDescription = stringResource(
         if (visible) R.string.auth_hide_field else R.string.auth_show_field, label
@@ -119,10 +122,12 @@ internal fun AuthPasswordField(
         keyboardType = KeyboardType.Password,
         imeAction = imeAction,
         helperText = helperText,
+        enabled = enabled,
         visualTransformation = if (visible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
             TextButton(
                 onClick = onToggleVisibility,
+                enabled = enabled,
                 modifier = Modifier.semantics { contentDescription = toggleDescription }
             ) {
                 Text(stringResource(if (visible) R.string.auth_hide else R.string.auth_show))

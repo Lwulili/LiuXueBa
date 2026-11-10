@@ -22,7 +22,8 @@ fun LoginPage(
     onTogglePasswordVisibility: () -> Unit,
     onSubmit: () -> Unit,
     onRegisterClick: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    isSubmitting: Boolean = false
 ) {
     AuthPageLayout(
         title = stringResource(R.string.auth_login_title),
@@ -34,6 +35,7 @@ fun LoginPage(
             onValueChange = onEmailChange,
             label = stringResource(R.string.auth_email),
             error = state.errorFor(AuthField.EMAIL),
+            enabled = !isSubmitting,
             keyboardType = KeyboardType.Email
         )
         Spacer(Modifier.height(16.dp))
@@ -44,6 +46,7 @@ fun LoginPage(
             visible = state.passwordVisible,
             onToggleVisibility = onTogglePasswordVisibility,
             error = state.errorFor(AuthField.PASSWORD),
+            enabled = !isSubmitting,
             imeAction = ImeAction.Done,
             helperText = stringResource(R.string.auth_password_hint),
             onSubmit = onSubmit
@@ -51,11 +54,11 @@ fun LoginPage(
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = onSubmit,
-            enabled = state.canSubmit,
+            enabled = state.canSubmit && !isSubmitting,
             modifier = Modifier.fillMaxWidth()
-        ) { Text(stringResource(R.string.auth_login)) }
+        ) { Text(stringResource(if (isSubmitting) R.string.auth_logging_in else R.string.auth_login)) }
         Spacer(Modifier.height(12.dp))
-        TextButton(onClick = onRegisterClick, modifier = Modifier.fillMaxWidth()) {
+        TextButton(onClick = onRegisterClick, enabled = !isSubmitting, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.auth_go_register))
         }
     }

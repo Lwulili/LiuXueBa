@@ -54,7 +54,7 @@ class AuthFlowTest {
     }
 
     @Test
-    fun loginRejectsInvalidInputsAndShowsUserFacingMessageForValidForm() {
+    fun loginRejectsInvalidInputsAndEnablesValidForm() {
         compose.onNodeWithText("登录").assertIsNotEnabled()
         field("邮箱").performTextInput("invalid-email")
         compose.onNodeWithText("请输入有效的邮箱地址").assertExists()
@@ -64,10 +64,6 @@ class AuthFlowTest {
 
         field("邮箱").performScrollTo().performTextReplacement("student@example.com")
         field("密码").performScrollTo().performTextReplacement("study2026")
-        compose.onNodeWithText("登录").performScrollTo().assertIsEnabled().performClick()
-        compose.onNodeWithText("暂时无法登录").assertIsDisplayed()
-        compose.onNodeWithText("请稍后重试。").assertIsDisplayed()
-        compose.onNodeWithText("知道了").performClick()
         compose.onNodeWithText("登录").performScrollTo().assertIsEnabled()
     }
 
@@ -84,9 +80,7 @@ class AuthFlowTest {
         compose.onNodeWithText("两次输入的密码不一致").assertExists()
         compose.onNodeWithText("注册").performScrollTo().assertIsNotEnabled()
         field("确认密码").performScrollTo().performTextReplacement("newstudy2026")
-        field("确认密码").performImeAction()
-        compose.onNodeWithText("暂时无法注册").assertIsDisplayed()
-        compose.onNodeWithText("请稍后重试。").assertIsDisplayed()
+        compose.onNodeWithText("注册").performScrollTo().assertIsEnabled()
     }
 
     @Test

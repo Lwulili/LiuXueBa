@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "liuxueba-backend"
+version = "0.1.0"
+description = "留学吧课设后端"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi==0.162.2",
+    "uvicorn==0.54.0",
+    "SQLAlchemy==2.1.8",
+    "psycopg[binary]==3.3.8",
+    "alembic==1.20.1",
+    "pydantic-settings==2.16.2",
+    "PyJWT==2.15.1",
+    "pwdlib[argon2]==0.3.1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest==9.2.0", "httpx2==2.16.0", "ruff==0.17.4"]
+
+[tool.setuptools.packages.find]
+include = ["app*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-ra"
+
+[tool.ruff]
+target-version = "py311"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["alembic"]

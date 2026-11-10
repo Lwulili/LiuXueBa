@@ -20,11 +20,15 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.items
 import com.example.liuxueba.ui.auth.AuthRoute
 import com.example.liuxueba.ui.auth.AuthViewModel
+import com.example.liuxueba.di.AppContainer
+import com.example.liuxueba.ui.profile.ProfilePage
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
+        val authViewModel = ViewModelProvider(
+            this, AuthViewModel.factory(AppContainer.authRepository)
+        )[AuthViewModel::class.java]
         setContent {
             LiuXueBaTheme {
                 MainScreen(authViewModel)
@@ -70,6 +74,8 @@ fun MainScreen(authViewModel: AuthViewModel) {
                 1 -> CommunityPage()
                 2 -> InstitutionPage()
                 3 -> ProfilePage(
+                    user = authViewModel.currentUser,
+                    onLogoutClick = authViewModel::logout,
                     onLoginClick = {
                         authViewModel.reset()
                         showAuthPage = true
@@ -1128,71 +1134,6 @@ fun InfoRow(
             color = MaterialTheme.colorScheme.secondary,
             style = MaterialTheme.typography.bodyMedium
         )
-    }
-}
-
-// 我的页面
-@Composable
-fun ProfilePage(
-    onLoginClick: () -> Unit
-) {
-    PageContainer {
-        Text("个人中心", style = MaterialTheme.typography.headlineLarge)
-
-        Spacer(Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(Modifier.padding(20.dp)) {
-                Text(
-                    "欢迎来到留学吧",
-                    style = MaterialTheme.typography.titleLarge
-                )
-                Spacer(Modifier.height(8.dp))
-                Text("登录后即可发布帖子、评论和收藏内容。")
-
-                Spacer(Modifier.height(16.dp))
-
-                Button(
-                    onClick = onLoginClick,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("登录 / 注册")
-                }
-            }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        Text("我的功能", style = MaterialTheme.typography.titleLarge)
-
-        Spacer(Modifier.height(12.dp))
-
-        ProfileItem("我的帖子")
-        ProfileItem("我的评论")
-        ProfileItem("我的收藏")
-        ProfileItem("账户设置")
-        ProfileItem("关于留学吧")
-    }
-}
-
-@Composable
-fun ProfileItem(title: String) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(title)
-            Text("›", color = MaterialTheme.colorScheme.secondary)
-        }
     }
 }
 

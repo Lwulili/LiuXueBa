@@ -7,7 +7,11 @@ enum class AuthPage { LOGIN, REGISTRATION }
 
 enum class AuthField { USERNAME, EMAIL, PASSWORD, CONFIRM_PASSWORD }
 
-enum class AuthNotice { LOGIN_UNAVAILABLE, REGISTRATION_UNAVAILABLE }
+enum class AuthNotice {
+    LOGIN_UNAVAILABLE, REGISTRATION_UNAVAILABLE, REGISTRATION_SUCCESS,
+    INVALID_CREDENTIALS, ACCOUNT_EXISTS, INVALID_INPUT, NETWORK_ERROR,
+    LOCAL_NETWORK_PERMISSION_REQUIRED
+}
 
 data class LoginFormState(
     val email: String = "",
@@ -56,5 +60,6 @@ data class AuthUiState(
     val page: AuthPage = AuthPage.LOGIN,
     val login: LoginFormState = LoginFormState(),
     val registration: RegistrationFormState = RegistrationFormState(),
-    val notice: AuthNotice? = null
+    val notice: AuthNotice? = null,
+    val isSubmitting: Boolean = false
 )
