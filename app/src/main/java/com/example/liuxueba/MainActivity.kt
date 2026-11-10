@@ -10,28 +10,38 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.lifecycle.ViewModelProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.liuxueba.ui.theme.LiuXueBaTheme
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.items
+import com.example.liuxueba.ui.auth.AuthRoute
+import com.example.liuxueba.ui.auth.AuthViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
         setContent {
             LiuXueBaTheme {
-                MainScreen()
+                MainScreen(authViewModel)
             }
         }
     }
 }
 
 @Composable
-fun MainScreen() {
-    var selectedTab by remember { mutableIntStateOf(0) }
-    var showLoginPage by remember { mutableStateOf(false) }
+fun MainScreen(authViewModel: AuthViewModel) {
+    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
+    var showAuthPage by rememberSaveable { mutableStateOf(false) }
+
+    if (showAuthPage) {
+        AuthRoute(viewModel = authViewModel, onExit = { showAuthPage = false })
+        return
+    }
 
     val tabs = listOf("首页", "社区", "院校", "我的")
 
@@ -59,21 +69,12 @@ fun MainScreen() {
                 0 -> HomePage()
                 1 -> CommunityPage()
                 2 -> InstitutionPage()
-                3 -> {
-                    if (showLoginPage) {
-                        LoginPage(
-                            onBack = {
-                                showLoginPage = false
-                            }
-                        )
-                    } else {
-                        ProfilePage(
-                            onLoginClick = {
-                                showLoginPage = true
-                            }
-                        )
+                3 -> ProfilePage(
+                    onLoginClick = {
+                        authViewModel.reset()
+                        showAuthPage = true
                     }
-                }
+                )
             }
         }
     }
@@ -1239,78 +1240,6 @@ fun PostCard(
             Spacer(Modifier.height(6.dp))
 
             Text(description, style = MaterialTheme.typography.bodyMedium)
-        }
-    }
-}
-@Composable
-fun LoginPage(
-    onBack: () -> Unit
-) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp)
-    ) {
-        TextButton(onClick = onBack) {
-            Text("← 返回")
-        }
-
-        Spacer(Modifier.height(32.dp))
-
-        Text(
-            "欢迎来到留学吧",
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        Spacer(Modifier.height(8.dp))
-
-        Text(
-            "登录账号，开启你的留学交流之旅",
-            color = MaterialTheme.colorScheme.secondary
-        )
-
-        Spacer(Modifier.height(32.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("邮箱") },
-            placeholder = { Text("请输入邮箱地址") },
-            singleLine = true
-        )
-
-        Spacer(Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("密码") },
-            placeholder = { Text("请输入密码") },
-            singleLine = true
-        )
-
-        Spacer(Modifier.height(24.dp))
-
-        Button(
-            onClick = {},
-            modifier = Modifier.fillMaxWidth(),
-            enabled = email.isNotBlank() && password.isNotBlank()
-        ) {
-            Text("登录")
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        TextButton(
-            onClick = {}
-        ) {
-            Text("还没有账号？立即注册")
         }
     }
 }
